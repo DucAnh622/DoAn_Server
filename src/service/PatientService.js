@@ -44,60 +44,79 @@ const bookingAppointment = async (rawData) => {
         });
 
         if(infoDoc) {
-          await db.Booking.destroy({
-              where: {
-                  doctorId: rawData.doctorId,
-                  patientId: data.id,
-                  staffId: infoDoc.staffId,
-                  date: rawData.date,
-                  statusId: 1
-              }
+          let book = await db.Booking.findOne({
+            where: {
+                patientId: data.id,
+                date: rawData.date,
+                timeId: rawData.timeId,
+            }
           })
 
-          await db.Booking.create({
-            statusId: 1,
-            doctorId: rawData.doctorId,
-            staffId: infoDoc.staffId,
-            patientId: data.id,
-            patientName: rawData.patientName,
-            patientGenderId: rawData.genderId,
-            reason: rawData.reason,
-            date: rawData.date,
-            timeId: rawData.timeId,
-          })
+          if(book) {
+            return {
+              EM1: 'Another appointment is exist! Please choose another time!',
+              EM2: 'Đã có lịch hẹn được đặt giờ này, vui lòng chọn thời gian khác!',
+              EC: 1,
+              DT: []
+            }
+          }
+          else {
+            await db.Booking.create({
+                statusId: 1,
+                doctorId: rawData.doctorId,
+                staffId: infoDoc.staffId,
+                patientId: data.id,
+                patientName: rawData.patientName,
+                patientGenderId: rawData.genderId,
+                reason: rawData.reason,
+                date: rawData.date,
+                timeId: rawData.timeId,
+              })
+            }
+    
+            await EmailService.sendEmail({
+                emailReceived: data.email,
+                doctorName: rawData.doctorName,
+                username: data.fullName,
+                patientName: rawData.patientName,
+                infomation: infoDoc,
+                address: data.address,
+                phone: data.phone,
+                date: rawData.date,
+                time: rawData.timeData,
+                reason: rawData.reason,
+                lang: rawData.LangType,
+                url: verifyToken(rawData.doctorId,infoDoc.staffId,data.id)
+            })
+    
+            await db.Schedule.update({
+                check: true  
+              },{
+                where: {
+                    doctorId: rawData.doctorId,
+                    date: rawData.date,
+                    timeId: rawData.timeId
+                }
+            })
+    
+            return {
+                EM1: 'Save successfully, please wait for a confirmation call or email confirmation!',
+                EM2: 'Lưu thành công, vui lòng chờ cuộc gọi xác nhận hoặc xác nhận qua email!',
+                EC: 0,
+                DT: []
+            }
         }
 
-        await EmailService.sendEmail({
-            emailReceived: data.email,
-            doctorName: rawData.doctorName,
-            username: data.fullName,
-            patientName: rawData.patientName,
-            infomation: infoDoc,
-            address: data.address,
-            phone: data.phone,
-            date: rawData.date,
-            time: rawData.timeData,
-            reason: rawData.reason,
-            lang: rawData.LangType,
-            url: verifyToken(rawData.doctorId,infoDoc.staffId,data.id)
-        })
-
-        await db.Schedule.update({
-            check: true  
-          },{
-            where: {
-                doctorId: rawData.doctorId,
-                date: rawData.date,
-                timeId: rawData.timeId
-            }
-        })
-
-        return {
-            EM1: 'Save successfully, please wait for a confirmation call or email confirmation!',
-            EM2: 'Lưu thành công, vui lòng chờ cuộc gọi xác nhận hoặc xác nhận qua email!',
-            EC: 0,
-            DT: []
-        } 
+          // await db.Booking.destroy({
+          //     where: {
+          //         doctorId: rawData.doctorId,
+          //         patientId: data.id,
+          //         staffId: infoDoc.staffId,
+          //         date: rawData.date,
+          //         statusId: 1
+          //     }
+          // })
+  
     }
 
     catch(err) {
