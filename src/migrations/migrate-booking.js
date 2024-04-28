@@ -35,6 +35,9 @@ module.exports = {
       reason: {
         type: Sequelize.STRING
       },
+      result: {
+        type: Sequelize.BLOB('long')
+      },
       comment: {
         type: Sequelize.STRING
       },

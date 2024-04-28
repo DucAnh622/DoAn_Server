@@ -29,6 +29,7 @@ module.exports = (sequelize, DataTypes) => {
     date: DataTypes.STRING,
     timeId: DataTypes.INTEGER,
     reason: DataTypes.STRING,
+    result: DataTypes.BLOB('long'),
     comment: DataTypes.STRING,
     cancel: DataTypes.STRING,
   }, {

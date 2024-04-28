@@ -119,6 +119,7 @@ const completedBookingManage = async (rawData) => {
             }  
         }
         data.statusId = 3
+        data.result = rawData.file
         await data.save()
 
         await EmailService.sendEmailConfirm({
@@ -630,9 +631,6 @@ const getTotal = async (userID,currentDate) => {
                       include: [
                         { model: db.User, as:"patientData" ,attributes: ['fullname','image']},
                         ],
-                      where: {
-                        doctorId: user.id,
-                      }, 
                       where: {statusId: 3, doctorId: user.id},
                       group: ['patientId'],
                       order: [[db.sequelize.literal('Max_Booking'), 'DESC']],

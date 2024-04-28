@@ -490,14 +490,15 @@ const getTotal = async (userID) => {
                     distinct: true,
                     col: 'patientId',
                     where: {
-                        doctorId: user.id
+                        doctorId: user.id,
+                        statusId: 3
                     }
                 })
                 break;
             case 3:
                 countPatients = await db.Booking.count({
                     where: {
-                        staffId: user.id
+                        staffId: user.id,
                     },
                     distinct: true,
                     col: 'patientId'

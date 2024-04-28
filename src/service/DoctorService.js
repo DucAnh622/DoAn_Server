@@ -448,6 +448,177 @@ const getAllDoctor = async (page,limit) => {
     }
 }
 
+const getPrevWeek = (startDate) => {
+    const week = [];
+    for (let i = 7; i >= 1; i--) {
+        const prevDate = new Date(startDate);
+        prevDate.setDate(prevDate.getDate() - i);
+        const year = prevDate.getFullYear();
+        const month = String(prevDate.getMonth() + 1).padStart(2, '0');
+        const day = String(prevDate.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        week.push(formattedDate);
+    }
+    return week;
+};
+
+const getNextWeek = (startDate) => {
+    const week = [];
+    for (let i = 1; i <= 7; i++) {
+        const nextDate = new Date(startDate);
+        nextDate.setDate(nextDate.getDate() + i);
+        const year = nextDate.getFullYear();
+        const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+        const day = String(nextDate.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        week.push(formattedDate);
+    }
+    return week;
+};
+
+const getWeek = () => {
+    const currentDate = new Date();
+    const week = [];
+    for (let i = 6; i >= 0; i--) {
+        const prevDate = new Date(currentDate);
+        prevDate.setDate(currentDate.getDate() - i);
+        const year = prevDate.getFullYear();
+        const month = String(prevDate.getMonth() + 1).padStart(2, '0');
+        const day = String(prevDate.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        week.push(formattedDate);
+    }
+
+    return week;
+};
+
+// const getTimeTable =  async (id,start,end) => {
+//     try {
+//         let data = []
+//         if(start) {
+//             data = await Promise.all(getPrevWeek(start).map(async (day) => {
+//                 const timeTable = await db.Schedule.findAll({
+//                     include: [
+//                         { model: db.Time, attributes: ['timeType'] }
+//                     ],
+//                     where: {
+//                         doctorId: id,
+//                         date: day
+//                     }
+//                 });
+//                 return { date: day, timeTable };
+//             }));
+//         }
+//         else if(end) {
+//             data = await Promise.all(getNextWeek(end).map(async (day) => {
+//                 const timeTable = await db.Schedule.findAll({
+//                     include: [
+//                         { model: db.Time, attributes: ['timeType'] }
+//                     ],
+//                     where: {
+//                         doctorId: id,
+//                         date: day
+//                     }
+//                 });
+//                 return { date: day, timeTable };
+//             }));
+//         }
+//         else {
+//             data = await Promise.all(getWeek().map(async (day) => {
+//                 const timeTable = await db.Schedule.findAll({
+//                     include: [
+//                         { model: db.Time, attributes: ['timeType'] }
+//                     ],
+//                     where: {
+//                         doctorId: id,
+//                         date: day
+//                     }
+//                 });
+//                 return { date: day, timeTable };
+//             }));
+//         }
+//         return {
+//             EM: "Get timetable successfully!",
+//             EC: 0,
+//             DT: data
+//         };
+//     }
+//     catch(err) {
+//         console.log(err)
+//         return {
+//             EM: 'Something wrong',
+//             EC: -1,
+//             DT: ''
+//         } 
+//     }
+// }
+
+const getTimeTable = async (id, start, end) => {
+    try {
+        let data = [];
+        let days = [];
+        
+        if (start) days = getPrevWeek(start);
+        else if (end) days = getNextWeek(end);
+        else days = getWeek();
+
+        data = await Promise.all(days.map(async (day) => {
+            const timeTable = await db.Schedule.findAll({
+                include: [
+                    { model: db.Time, attributes: ['timeType'] }
+                ],
+                where: {
+                    doctorId: id,
+                    date: day
+                }
+            });
+
+            const bookingInfoPromises = timeTable.map(async (item) => {
+                if (item.check === true) {
+                    const bookingInfo = await db.Booking.findOne({
+                        where: {
+                            doctorId: id,
+                            date: day,
+                            timeId: item.timeId
+                        },
+                        attributes: ['patientName', 'id', 'patientGenderId', 'reason'],
+                        include: [
+                            {
+                                model: db.Gender, attributes: ['valueEN', 'valueVI']
+                            }
+                        ]
+                    });
+                    return bookingInfo;
+                } else {
+                    return null; // Trả về null nếu không có thông tin booking
+                }
+            });
+
+            const bookingInfo = await Promise.all(bookingInfoPromises);
+            const updatedTimeTable = timeTable.map((item, index) => ({
+                ...item.toJSON(),
+                bookingInfo: item.check === true ? bookingInfo[index] || null : null // Thêm thông tin booking hoặc null nếu không tìm thấy
+            }));
+
+            return { date: day, timeTable: updatedTimeTable };
+        }));
+
+        return {
+            EM: "Get timetable successfully!",
+            EC: 0,
+            DT: data
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EM: 'Something wrong',
+            EC: -1,
+            DT: ''
+        };
+    }
+};
+
+
 module.exports = {
     get,
     getInfo,
@@ -458,5 +629,6 @@ module.exports = {
     getPrice,
     getById,
     getComment,
-    getAllDoctor
+    getAllDoctor,
+    getTimeTable
 }

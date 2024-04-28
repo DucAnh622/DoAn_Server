@@ -258,6 +258,32 @@ const getAllDoctorFunc = async (req,res) => {
         })
     }
 }
+
+const getTimeTableFunc = async (req,res) => {
+    try {
+        if(!req.query.id) {
+            return res.status(500).json({
+                EM: 'Missing parameter!',
+                EC: -1,
+                DT: ''
+            })
+        }
+        let data = await DoctorService.getTimeTable(req.query.id,req.query.start,req.query.end)
+        return res.status(200).json({
+            EM: data.EM,
+            EC: data.EC,
+            DT: data.DT
+        })
+    }
+    catch(err) {
+        console.log(err)
+        return res.status(500).json({
+            EM: 'Error of serve!',
+            EC: -1,
+            DT: ''
+        })  
+    }
+}
     
 module.exports = {
     getFunc,
@@ -269,5 +295,6 @@ module.exports = {
     getScheduleFunc,
     getPriceFunc,
     getCommentFunc,
-    getAllDoctorFunc
+    getAllDoctorFunc,
+    getTimeTableFunc
 }

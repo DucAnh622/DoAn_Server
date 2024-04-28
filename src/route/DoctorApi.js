@@ -13,6 +13,7 @@ const initDoctorApi = (app) => {
     route.get('/doctor-schedule/get',DoctorController.getScheduleFunc);
     route.get('/doctor/get-comment',DoctorController.getCommentFunc);
     route.get('/doctor/get-all',DoctorController.getAllDoctorFunc);
+    route.get('/doctor-schedule/get-timetable',DoctorController.getTimeTableFunc);
     return app.use('/',route);
 }
 
