@@ -581,10 +581,13 @@ const getTimeTable = async (id, start, end) => {
                             date: day,
                             timeId: item.timeId
                         },
-                        attributes: ['patientName', 'id', 'patientGenderId', 'reason'],
+                        attributes: ['patientName', 'id', 'patientGenderId', 'reason','statusId'],
                         include: [
                             {
                                 model: db.Gender, attributes: ['valueEN', 'valueVI']
+                            },
+                            {
+                                model: db.Status, attributes: ['valueEN', 'valueVI']
                             }
                         ]
                     });
